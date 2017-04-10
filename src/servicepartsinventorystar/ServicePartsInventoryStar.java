@@ -15,7 +15,7 @@ public class ServicePartsInventoryStar {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        Location loc = new Location("testloc", 3, 5, 3, 3, .05, .03, .07);
+        Location loc = new Location("testloc", 3, 2, 6, 3, 3, .05, .03, .07);
         
         loc.SetState(0, 0, 0);
         
