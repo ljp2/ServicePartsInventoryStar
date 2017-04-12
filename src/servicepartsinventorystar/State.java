@@ -49,27 +49,34 @@ public class State {
         return String.format("%s %d %d %d", this.code, this.I, this.KQ, this.KE);
     }
 
-    private char DetermineZGMcode(int val, int maxval) {
-        // used for KQ and KE
-        char code;
+    private String DetermineZGMcode(int val, int maxval) {
+        /**
+         * Used for KQ and KE to determine Z G or M
+         */
+        String zgm;
         if (val == 0) {
-            code = 'Z';
+            zgm = "Z";
         } else if (val < maxval) {
-            code = 'G';
+            zgm = "G";
         } else {
-            code = 'M';
+            zgm = "M";
         }
-        return code;
+        return zgm;
     }
 
     private String DetermineIcode() {
+        /**
+         * Used for I Z => I = 0, S => I = 1..Istar, G => I = Istar+1 ... Imax
+         */
         String icode;
         if (this.I == 0) {
             icode = "Z";
         } else if (this.I <= location.Istar) {
             icode = "S";
+        } else if (this.I == location.Istar + 1) {
+            icode = "E";
         } else if (this.I < location.Imax) {
-            icode = "Sp";
+            icode = "G";
         } else if (this.I == location.Imax) {
             icode = "M";
         } else {
@@ -80,9 +87,10 @@ public class State {
     }
 
     private String DetermineIKQKECode() {
-        return DetermineIcode() 
-                + DetermineZGMCode(this.KQ, location.KQmax) 
-                + DetermineZGMCode(this.KE, location.KEmax);
+        String ikqke = this.DetermineIcode();
+        ikqke += this.DetermineZGMcode(this.KQ, location.KQmax);
+        ikqke += this.DetermineZGMcode(this.KE, location.KEmax);
+        return ikqke;
     }
 
     private TransitionsForDecision DetermineAllTransitions_IZ_KQZ_KEZ() {
@@ -148,7 +156,15 @@ public class State {
         return td;
     }
 
-    private TransitionsForDecision DetermineAllTransitions_IgZ_KQZ_KEZ() {
+    public TransitionsForDecision NotImplementedState(String notImplemented) {
+        this.location.unimplementedStates.add((notImplemented));
+        System.out.println(String.format("*** %s Transitions Not Implemented State", this));
+        TransitionsForDecision td = new TransitionsForDecision();
+        td.Add(this, Decision.Z, new Transition(this.location, this.I, this.KQ, this.KE, 1.0));
+        return td;
+    }
+
+    private TransitionsForDecision DetermineAllTransitions_IS_KQZ_KEZ() {
         TransitionsForDecision td = new TransitionsForDecision();
         td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, 0, 0, 1.0));
         td.Add(this, Decision.Q, new Transition(this.location, this.I - 1, 1, 0, location.L_AL));
@@ -157,31 +173,31 @@ public class State {
         td.Add(this, Decision.R, new Transition(this.location, this.I, 0, 2, location.B_BL));
         td.Add(this, Decision.QR, new Transition(this.location, this.I - 1, 1, 1, location.L_ABL));
         td.Add(this, Decision.QR, new Transition(this.location, this.I, 2, 1, location.A_ABL));
-        td.Add(this, Decision.QR, new Transition(this.location, this.I, 1, 2, location.B_ABL));
+        td.Add(this, Decision.QR, new Transition(this.location, this.I - 1, 1, 2, location.B_ABL));
         return td;
     }
 
-    private TransitionsForDecision DetermineAllTransitions_IgZ_KQZ_KEG() {
-        TransitionsForDecision td = new TransitionsForDecision();
-        td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, 0, this.KE, location.L_BL));
-        td.Add(this, Decision.Z, new Transition(this.location, this.I, 0, this.KE + 1, location.B_BL));
-        td.Add(this, Decision.Q, new Transition(this.location, this.I - 1, 1, this.KE, location.L_ABL));
-        td.Add(this, Decision.Q, new Transition(this.location, this.I, 2, this.KE, location.B_ABL));
-        td.Add(this, Decision.Q, new Transition(this.location, this.I, 1, this.KE + 1, location.L_ABL));
-        return td;
-    }
-
-    private TransitionsForDecision DetermineAllTransitions_IgZ_KQG_KEZ() {
+    private TransitionsForDecision DetermineAllTransitions_IS_KQG_KEZ() {
         TransitionsForDecision td = new TransitionsForDecision();
         td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, this.KQ, 0, location.L_AL));
         td.Add(this, Decision.Z, new Transition(this.location, this.I, this.KQ + 1, 0, location.A_AL));
         td.Add(this, Decision.R, new Transition(this.location, this.I - 1, this.KQ, 1, location.L_ABL));
         td.Add(this, Decision.R, new Transition(this.location, this.I, this.KQ + 1, 1, location.A_ABL));
-        td.Add(this, Decision.R, new Transition(this.location, this.I, this.KQ, 2, location.L_ABL));
+        td.Add(this, Decision.R, new Transition(this.location, this.I, this.KQ, 2, location.B_ABL));
         return td;
     }
 
-    private TransitionsForDecision DetermineAllTransitions_IgZ_KQG_KEG() {
+    private TransitionsForDecision DetermineAllTransitions_IS_KQZ_KEG() {
+        TransitionsForDecision td = new TransitionsForDecision();
+        td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, 0, this.KE, location.L_BL));
+        td.Add(this, Decision.Z, new Transition(this.location, this.I, 0, this.KE + 1, location.B_BL));
+        td.Add(this, Decision.Q, new Transition(this.location, this.I - 1, 1, this.KE, location.L_ABL));
+        td.Add(this, Decision.Q, new Transition(this.location, this.I, 2, this.KE, location.A_ABL));
+        td.Add(this, Decision.Q, new Transition(this.location, this.I, 1, this.KE + 1, location.B_ABL));
+        return td;
+    }
+
+    private TransitionsForDecision DetermineAllTransitions_IS_KQG_KEG() {
         TransitionsForDecision td = new TransitionsForDecision();
         td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, this.KQ, this.KE, location.L_ABL));
         td.Add(this, Decision.Z, new Transition(this.location, this.I, this.KQ + 1, this.KE, location.A_ABL));
@@ -189,15 +205,15 @@ public class State {
         return td;
     }
 
-    private TransitionsForDecision DetermineAllTransitions_IR_KQM_KEG() {
+    private TransitionsForDecision DetermineAllTransitions_IS_KQM_KEG() {
         TransitionsForDecision td = new TransitionsForDecision();
         td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, location.KQmax, this.KE, location.L_ABL));
-        td.Add(this, Decision.Z, new Transition(this.location, this.I + location.KQmax, 0, this.KE, location.A_ABL));
-        td.Add(this, Decision.Z, new Transition(this.location, this.I, location.KQmax, this.KE, location.B_ABL));
+        td.Add(this, Decision.Z, new Transition(this.location, this.I + location.orderQuantity, 0, this.KE, location.A_ABL));
+        td.Add(this, Decision.Z, new Transition(this.location, this.I, location.KQmax, this.KE + 1, location.B_ABL));
         return td;
     }
 
-    private TransitionsForDecision DetermineAllTransitions_IG_KQG_KEM() {
+    private TransitionsForDecision DetermineAllTransitions_IS_KQG_KEM() {
         TransitionsForDecision td = new TransitionsForDecision();
         td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, this.KQ, location.KEmax, location.L_ABL));
         td.Add(this, Decision.Z, new Transition(this.location, this.I, this.KQ + 1, location.KEmax, location.A_ABL));
@@ -205,21 +221,31 @@ public class State {
         return td;
     }
 
-    private TransitionsForDecision DetermineAllTransitions_IR_KQM_KEM() {
+    private TransitionsForDecision DetermineAllTransitions_IS_KQM_KEM() {
         TransitionsForDecision td = new TransitionsForDecision();
         td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, location.KQmax, location.KEmax, location.L_ABL));
         td.Add(this, Decision.Z, new Transition(this.location, this.I + location.orderQuantity, 0, location.KEmax, location.A_ABL));
-        td.Add(this, Decision.Z, new Transition(this.location, this.I + 1, location.KQmax, 0, location.L_ABL));
+        td.Add(this, Decision.Z, new Transition(this.location, this.I + 1, location.KQmax, 0, location.B_ABL));
         return td;
     }
 
-    private TransitionsForDecision DetermineAllTransitions_IR_KQM_KEZ() {
+    private TransitionsForDecision DetermineAllTransitions_IS_KQM_KEZ() {
         TransitionsForDecision td = new TransitionsForDecision();
         td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, location.KQmax, 0, location.L_AL));
         td.Add(this, Decision.Z, new Transition(this.location, this.I + location.orderQuantity, 0, 0, location.A_AL));
         td.Add(this, Decision.R, new Transition(this.location, this.I - 1, location.KQmax, 1, location.L_ABL));
         td.Add(this, Decision.R, new Transition(this.location, this.I + location.orderQuantity, 0, 1, location.A_ABL));
         td.Add(this, Decision.R, new Transition(this.location, this.I, location.KQmax, 2, location.B_ABL));
+        return td;
+    }
+
+    private TransitionsForDecision DetermineAllTransitions_IS_KQZ_KEM() {
+        TransitionsForDecision td = new TransitionsForDecision();
+        td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, 0, location.KEmax, location.L_BL));
+        td.Add(this, Decision.Z, new Transition(this.location, this.I + 1, 0, 0, location.B_BL));
+        td.Add(this, Decision.Q, new Transition(this.location, this.I - 1, 1, location.KEmax, location.L_ABL));
+        td.Add(this, Decision.Q, new Transition(this.location, this.I, 2, location.KEmax, location.A_ABL));
+        td.Add(this, Decision.Q, new Transition(this.location, this.I + 1, 1, 0, location.B_ABL));
         return td;
     }
 
@@ -243,15 +269,26 @@ public class State {
         return td;
     }
 
-    private TransitionsForDecision DetermineAllTransitions_IgZ_KQZ_KEM() {
+    private TransitionsForDecision DetermineAllTransitions_IEGM_KQZ_KEZ() {
+        TransitionsForDecision td = new TransitionsForDecision();
+        td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, 0, 0, 1.0));
+        return td;
+    }
+
+    private TransitionsForDecision DetermineAllTransitions_IEG_KQZ_KEG() {
+        TransitionsForDecision td = new TransitionsForDecision();
+        td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, 0, this.KE, location.L_BL));
+        td.Add(this, Decision.Z, new Transition(this.location, this.I + 1, 0, 0, location.B_BL));
+        return td;
+    }
+
+    private TransitionsForDecision DetermineAllTransitions_IEG_KQZ_KEM() {
         TransitionsForDecision td = new TransitionsForDecision();
         td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, 0, location.KEmax, location.L_BL));
         td.Add(this, Decision.Z, new Transition(this.location, this.I + 1, 0, 0, location.B_BL));
-        td.Add(this, Decision.Q, new Transition(this.location, this.I - 1, 1, location.KEmax, location.L_ABL));
-        td.Add(this, Decision.Q, new Transition(this.location, this.I, 2, location.KEmax, location.L_ABL));
-        td.Add(this, Decision.Q, new Transition(this.location, this.I + 1, 1, 0, location.L_ABL));
         return td;
     }
+
 
     private TransitionsForDecision DetermineAllTransitionsForAllDecisions() {
         //System.out.println("Determining transitions for code " + this.code);
@@ -280,83 +317,58 @@ public class State {
             case "ZMM":
                 return this.DetermineAllTransitions_IZ_KQM_KEM();
 
-            case "RZZ":
-            case "GZZ":
-            case "MZZ":
-                return this.DetermineAllTransitions_IgZ_KQZ_KEZ();
+            case "SZZ":
+                return this.DetermineAllTransitions_IS_KQZ_KEZ();
 
-            case "RZG":
-            case "GZG":
-            case "MZG":
-                return this.DetermineAllTransitions_IgZ_KQZ_KEG();
+            case "SGZ":
+                return this.DetermineAllTransitions_IS_KQG_KEZ();
 
-            case "RZM":
-            case "GZM":
-                return this.DetermineAllTransitions_IgZ_KQZ_KEM();
+            case "SZG":
+                return this.DetermineAllTransitions_IS_KQZ_KEG();
 
-            case "RGZ":
-            case "GGZ":
-            case "MGZ":
-                return this.DetermineAllTransitions_IgZ_KQG_KEZ();
+            case "SGG":
+                return this.DetermineAllTransitions_IS_KQG_KEG();
 
-            case "RGG":
-            case "GGG":
-            case "MGG":
-                return this.DetermineAllTransitions_IgZ_KQG_KEG();
+            case "SMG":
+                return this.DetermineAllTransitions_IS_KQM_KEG();
 
-            case "RMG":
-                return this.DetermineAllTransitions_IR_KQM_KEG();
+            case "SGM":
+                return this.DetermineAllTransitions_IS_KQG_KEM();
 
-            case "RGM":
-            case "GGM":
-                return this.DetermineAllTransitions_IG_KQG_KEM();
+            case "SMM":
+                return this.DetermineAllTransitions_IS_KQM_KEM();
 
-            case "RMM":
-                return this.DetermineAllTransitions_IR_KQM_KEM();
+            case "SMZ":
+                return this.DetermineAllTransitions_IS_KQM_KEZ();
 
-            case "RMZ":
-                return this.DetermineAllTransitions_IR_KQM_KEZ();
+            case "SZM":
+                return this.DetermineAllTransitions_IS_KQZ_KEM();
 
             case "ZMZ":
                 return this.DetermineAllTransitions_IZ_KQM_KEZ();
 
-            //
-            // These cases are not covered in document
-            //
-            case "GMZ":
-                //throw new IllegalArgumentException("State not implemented: " + code);
-                return this.NotImplementedState("GMZ");
-            case "GMG":
-                //throw new IllegalArgumentException("State not implemented: " + code);
-                return this.NotImplementedState("GMG");
-            case "GMM":
-                //throw new IllegalArgumentException("State not implemented: " + code);
-                return this.NotImplementedState("GMM");
-            case "MZM":
-                //throw new IllegalArgumentException("State not implemented: " + code);
-                return this.NotImplementedState("MZM");
-            case "MGM":
-                //throw new IllegalArgumentException("State not implemented: " + code);
-                return this.NotImplementedState("MGM");
-            case "MMZ":
-                //throw new IllegalArgumentException("State not implemented: " + code);
-                return this.NotImplementedState("MMZ");
-            case "MMG":
-                //throw new IllegalArgumentException("State not implemented: " + code);
-                return this.NotImplementedState("MMG");
-            case "MMM":
-                //throw new IllegalArgumentException("State not implemented: " + code);
-                return this.NotImplementedState("MMM");
+            case "EZZ":
+            case "GZZ":
+            case "MZZ":
+                return this.DetermineAllTransitions_IEGM_KQZ_KEZ();
+
+            case "EZG":
+            case "GZG":
+                return this.DetermineAllTransitions_IEG_KQZ_KEG();
+
+            case "EZM":
+            case "GZM":
+                return this.DetermineAllTransitions_IEG_KQZ_KEM();
+
             default:
                 throw new IllegalArgumentException("Unknown state code value for transitions: " + this.code);
+                
+                
+            /**
+             * Non George States
+             * EZM, GZM
+             */
         }
     }
 
-    public TransitionsForDecision NotImplementedState(String notImplemented) {
-        this.location.unimplementedStates.add((notImplemented));
-        System.out.println(String.format("*** %s Transitions Not Implemented State", this));
-        TransitionsForDecision td = new TransitionsForDecision();
-        td.Add(this, Decision.Z, new Transition(this.location, this.I, this.KQ, this.KE, 1.0));
-        return td;
-    }
 }
