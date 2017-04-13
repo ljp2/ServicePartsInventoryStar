@@ -17,7 +17,8 @@ public class TransitionsForDecision extends HashMap<Decision, Transitions> {
     }
 
     public void Add(State fromState, Decision decision, Transition transition) {
-        System.out.println(String.format("From %s decision[%s] Transitioning to %s", fromState, decision, transition.state));
+//        System.out.println(String.format("From %s decision[%s] Transitioning to %s", fromState, decision, transition.state));
+        System.out.println(String.format("%s %s to %s", decision, fromState, transition.state));
         if (this.containsKey(decision) == false) {
             this.put(decision, new Transitions());
         }

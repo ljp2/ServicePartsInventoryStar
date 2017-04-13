@@ -36,7 +36,7 @@ public class State {
         this.KQ = KQ;
         this.KE = KE;
         this.code = DetermineIKQKECode();
-        System.out.println(String.format("Creating %s", this));
+//        System.out.println(String.format("Creating %s", this));
         this.transitionsForDecision = DetermineAllTransitionsForAllDecisions();
         this.possibleDecisions = new ArrayList<>();
         this.transitionsForDecision.keySet().forEach((d) -> {
@@ -153,14 +153,6 @@ public class State {
         td.Add(this, Decision.N, new Transition(this.location, 0, location.KQmax, location.KEmax, location.L_ABL));
         td.Add(this, Decision.N, new Transition(this.location, location.orderQuantity, 0, location.KEmax, location.A_ABL));
         td.Add(this, Decision.N, new Transition(this.location, 1, location.KQmax, 0, location.B_ABL));
-        return td;
-    }
-
-    public TransitionsForDecision NotImplementedState(String notImplemented) {
-        this.location.unimplementedStates.add((notImplemented));
-        System.out.println(String.format("*** %s Transitions Not Implemented State", this));
-        TransitionsForDecision td = new TransitionsForDecision();
-        td.Add(this, Decision.Z, new Transition(this.location, this.I, this.KQ, this.KE, 1.0));
         return td;
     }
 
@@ -289,6 +281,19 @@ public class State {
         return td;
     }
 
+    private TransitionsForDecision DetermineAllTransitions_IE_KQM_KEZ() {
+        TransitionsForDecision td = new TransitionsForDecision();
+        td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, location.KQmax, 0, location.L_AL));
+        td.Add(this, Decision.Z, new Transition(this.location, this.I + 1, 0, 0, location.A_AL));
+        return td;
+    }
+
+    private TransitionsForDecision DetermineAllTransitions_IE_KQG_KEZ() {
+        TransitionsForDecision td = new TransitionsForDecision();
+        td.Add(this, Decision.Z, new Transition(this.location, this.I - 1, this.KQ, 0, location.L_AL));
+        td.Add(this, Decision.Z, new Transition(this.location, this.I, this.KQ + 1, 0, location.A_AL));
+        return td;
+    }
 
     private TransitionsForDecision DetermineAllTransitionsForAllDecisions() {
         //System.out.println("Determining transitions for code " + this.code);
@@ -360,13 +365,17 @@ public class State {
             case "GZM":
                 return this.DetermineAllTransitions_IEG_KQZ_KEM();
 
+            case "EMZ":
+                return this.DetermineAllTransitions_IE_KQM_KEZ();
+
+            case "EGZ":
+                return this.DetermineAllTransitions_IE_KQG_KEZ();
+
             default:
                 throw new IllegalArgumentException("Unknown state code value for transitions: " + this.code);
-                
-                
+
             /**
-             * Non George States
-             * EZM, GZM
+             * Non George States EZM, GZM, EMZ
              */
         }
     }

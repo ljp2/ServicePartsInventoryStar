@@ -18,8 +18,7 @@ public class ServicePartsInventoryStar {
         Location loc = new Location("testloc", 3, 2, 6, 3, 3, .05, .03, .07);
         
         loc.SetState(0, 0, 0);
-        
-        System.out.println("Unimplemented states = " + loc.unimplementedStates);
+
     }
     
 }
