@@ -5,7 +5,6 @@
  */
 package servicepartsinventorystar;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -33,7 +32,6 @@ public class Location {
     Double L_ABL;
     State currentState;
     HashMap<Integer, State> states;
-    HashSet<String> unimplementedStates;
 
     public Location(String id, Integer orderQuantity, Integer Istar, Integer Imax, Integer KQmax, Integer KEmax, Double lambda, Double alpha, Double beta) {
         this.id = id;
@@ -54,13 +52,12 @@ public class Location {
         this.L_ABL = lambda / (alpha + beta + lambda);
         this.currentState = null;
         this.states = new HashMap<>();
-        this.unimplementedStates = new HashSet<>();
     }
 
     public State CreateState(Integer I, Integer KQ, Integer KE) {
-        /** 
-         * Creates a new state in this location
-         * and inserts it into  states : HashMap<Integer, State>.
+        /**
+         * Creates a new state in this location and inserts it into states :
+         * HashMap<Integer, State>.
          */
         Integer IKQKE = KE + 100 * KQ + 10000 * I;
         State state = new State(this);
@@ -77,5 +74,5 @@ public class Location {
         }
         return this.currentState;
     }
-    
+
 }
